@@ -1,0 +1,25 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+
+# logs
+*.log
+
+# local environment
+.env
+.env.local
+
+# operating system
+.DS_Store
+Thumbs.db
+
+# editor
+.vscode/
+
+# user music (do not upload copyrighted songs)
+assets/song.mp3
+assets/*.mp3
+assets/*.wav
+assets/*.m4a

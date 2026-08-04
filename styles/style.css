@@ -1,0 +1,165 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+
+    background:#0b1120;
+
+    color:white;
+
+    font-family:Arial;
+
+}
+
+.dashboard{
+
+    height:100vh;
+
+    display:flex;
+
+    flex-direction:column;
+
+}
+
+header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:20px;
+
+    background:#111827;
+
+}
+
+.logo{
+
+    font-size:36px;
+
+    font-weight:bold;
+
+    color:#4f8cff;
+
+}
+
+.stats{
+
+    display:flex;
+
+    gap:15px;
+
+}
+
+.card{
+
+    background:#1b263b;
+
+    padding:15px;
+
+    border-radius:15px;
+
+    text-align:center;
+
+    min-width:110px;
+
+}
+
+.card span{
+
+    display:block;
+
+    margin-top:8px;
+
+    font-size:22px;
+
+    color:#00e5ff;
+
+}
+
+main{
+
+    flex:1;
+
+    display:flex;
+
+    gap:20px;
+
+    padding:20px;
+
+}
+
+.camera-panel{
+
+    flex:1;
+
+    background:#111827;
+
+    border-radius:20px;
+
+    overflow:hidden;
+
+    position:relative;
+
+}
+
+video{
+
+    width:100%;
+
+    height:100%;
+
+    object-fit:cover;
+
+    transform:scaleX(-1);
+
+}
+
+canvas{
+
+    position:absolute;
+
+    inset:0;
+
+    width:100%;
+
+    height:100%;
+
+    pointer-events:none;
+
+    transform:scaleX(-1);
+
+}
+
+.sidebar button{
+
+    padding:18px;
+
+    border:none;
+
+    border-radius:15px;
+
+    font-size:18px;
+
+    cursor:pointer;
+
+    background:#3b82f6;
+
+    color:white;
+
+    transition:.25s;
+
+}
+
+.sidebar button:hover{
+
+    background:#2563eb;
+
+    transform:translateY(-2px);
+
+}
