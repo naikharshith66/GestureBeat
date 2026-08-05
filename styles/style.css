@@ -98,13 +98,19 @@ main{
 
     flex:1;
 
+    position:relative;
+
+    overflow:hidden;
+
     background:#111827;
 
     border-radius:20px;
 
-    overflow:hidden;
+    display:flex;
 
-    position:relative;
+    justify-content:center;
+
+    align-items:center;
 
 }
 

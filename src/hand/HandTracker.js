@@ -1,72 +1,102 @@
-import {
-  FilesetResolver,
-  HandLandmarker
-} from "@mediapipe/tasks-vision";
-
+import { Hands } from "@mediapipe/hands";
+import { Camera } from "@mediapipe/camera_utils";
 import EventBus from "../core/EventBus.js";
+import LandmarkDrawer from "./LandmarkDrawer.js";
 
 class HandTracker {
-  constructor() {
-    this.handLandmarker = null;
-    this.video = null;
-    this.running = false;
-  }
 
-  async initialize(video) {
-    if (this.running) return;
+    constructor() {
 
-    this.video = video;
+        this.hands = null;
+        this.camera = null;
+        this.video = null;
 
-    try {
-      console.log("Loading MediaPipe WASM...");
+        this.lastTime = performance.now();
+        this.frames = 0;
 
-      const vision = await FilesetResolver.forVisionTasks(
-        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
-      );
-
-      console.log("Loading Hand Landmarker...");
-
-      this.handLandmarker =
-        await HandLandmarker.createFromModelPath(
-          vision,
-          "/models/hand_landmarker.task"
-        );
-
-      await this.handLandmarker.setOptions({
-        runningMode: "VIDEO",
-        numHands: 2,
-        minHandDetectionConfidence: 0.7,
-        minHandPresenceConfidence: 0.7,
-        minTrackingConfidence: 0.7
-      });
-
-      console.log("✅ HandTracker Ready");
-
-      this.running = true;
-
-      requestAnimationFrame(this.detect.bind(this));
-
-    } catch (error) {
-      console.error("HandTracker Error:", error);
     }
-  }
 
-  detect() {
-    if (!this.running) return;
+    async initialize(video) {
 
-    const result = this.handLandmarker.detectForVideo(
-      this.video,
-      performance.now()
-    );
+        this.video = video;
 
-    EventBus.emit("hands-result", result);
+        this.hands = new Hands({
 
-    requestAnimationFrame(this.detect.bind(this));
-  }
+            locateFile: (file) => {
+                return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+            }
 
-  stop() {
-    this.running = false;
-  }
+        });
+
+        this.hands.setOptions({
+
+            maxNumHands: 2,
+
+            modelComplexity: 1,
+
+            minDetectionConfidence: 0.7,
+
+            minTrackingConfidence: 0.7
+
+        });
+
+        this.hands.onResults((results) => {
+
+            LandmarkDrawer.draw(results);
+
+            document.getElementById("hands").textContent =
+                results.multiHandLandmarks
+                    ? results.multiHandLandmarks.length
+                    : 0;
+
+            this.updateFPS();
+
+            EventBus.emit("hands-result", results);
+
+        });
+
+        this.camera = new Camera(video, {
+
+            onFrame: async () => {
+
+                await this.hands.send({
+
+                    image: video
+
+                });
+
+            },
+
+            width: 1280,
+
+            height: 720
+
+        });
+
+        this.camera.start();
+
+        console.log("✅ HandTracker Started");
+
+    }
+
+    updateFPS() {
+
+        this.frames++;
+
+        const now = performance.now();
+
+        if (now - this.lastTime >= 1000) {
+
+            document.getElementById("fps").textContent = this.frames;
+
+            this.frames = 0;
+
+            this.lastTime = now;
+
+        }
+
+    }
+
 }
 
 export default new HandTracker();

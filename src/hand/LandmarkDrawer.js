@@ -1,13 +1,46 @@
-export default class LandmarkDrawer {
+import {
+    drawConnectors,
+    drawLandmarks
+} from "@mediapipe/drawing_utils";
 
-    constructor(canvas){
+import { HAND_CONNECTIONS } from "@mediapipe/hands";
 
-        this.canvas = canvas;
-        this.ctx = canvas.getContext("2d");
+class LandmarkDrawer {
+
+    constructor() {
+
+        this.canvas = null;
+        this.ctx = null;
 
     }
 
-    clear(){
+    initialize() {
+
+        if (this.canvas) return;
+
+        this.canvas = document.getElementById("canvas");
+
+        if (!this.canvas) {
+
+            console.error("Canvas not found");
+            return;
+
+        }
+
+        this.ctx = this.canvas.getContext("2d");
+
+    }
+
+    draw(results) {
+
+        this.initialize();
+
+        if (!this.canvas || !this.ctx) return;
+
+        this.canvas.width = results.image.width;
+        this.canvas.height = results.image.height;
+
+        this.ctx.save();
 
         this.ctx.clearRect(
             0,
@@ -16,70 +49,37 @@ export default class LandmarkDrawer {
             this.canvas.height
         );
 
-    }
+        if (results.multiHandLandmarks) {
 
-    drawHand(landmarks){
+            for (const landmarks of results.multiHandLandmarks) {
 
-        const ctx=this.ctx;
+                drawConnectors(
+                    this.ctx,
+                    landmarks,
+                    HAND_CONNECTIONS,
+                    {
+                        color: "#FFFFFF",
+                        lineWidth: 4
+                    }
+                );
 
-        const w=this.canvas.width;
-        const h=this.canvas.height;
+                drawLandmarks(
+                    this.ctx,
+                    landmarks,
+                    {
+                        color: "#00FFFF",
+                        radius: 5
+                    }
+                );
 
-        const connections=[
-
-            [0,1],[1,2],[2,3],[3,4],
-
-            [0,5],[5,6],[6,7],[7,8],
-
-            [5,9],[9,10],[10,11],[11,12],
-
-            [9,13],[13,14],[14,15],[15,16],
-
-            [13,17],[17,18],[18,19],[19,20],
-
-            [0,17]
-
-        ];
-
-        ctx.strokeStyle="white";
-        ctx.lineWidth=3;
-
-        for(const [a,b] of connections){
-
-            ctx.beginPath();
-
-            ctx.moveTo(
-                landmarks[a].x*w,
-                landmarks[a].y*h
-            );
-
-            ctx.lineTo(
-                landmarks[b].x*w,
-                landmarks[b].y*h
-            );
-
-            ctx.stroke();
+            }
 
         }
 
-        ctx.fillStyle="#00ffff";
-
-        for(const point of landmarks){
-
-            ctx.beginPath();
-
-            ctx.arc(
-                point.x*w,
-                point.y*h,
-                5,
-                0,
-                Math.PI*2
-            );
-
-            ctx.fill();
-
-        }
+        this.ctx.restore();
 
     }
 
 }
+
+export default new LandmarkDrawer();
