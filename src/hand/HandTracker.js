@@ -1,102 +1,104 @@
-import { Hands } from "@mediapipe/hands";
-import { Camera } from "@mediapipe/camera_utils";
-import EventBus from "../core/EventBus.js";
 import LandmarkDrawer from "./LandmarkDrawer.js";
+import { FilesetResolver, HandLandmarker } from "@mediapipe/tasks-vision";
+
+import EventBus from "../core/EventBus.js";
 
 class HandTracker {
+  constructor() {
+    this.landmarker = null;
+    this.video = null;
+    this.running = false;
 
-    constructor() {
+    this.lastVideoTime = -1;
+    this.lastFPSUpdate = performance.now();
+    this.frames = 0;
+  }
 
-        this.hands = null;
-        this.camera = null;
-        this.video = null;
+  async initialize(video) {
+    if (this.running) return;
 
-        this.lastTime = performance.now();
-        this.frames = 0;
+    this.video = video;
 
+    console.log("Loading MediaPipe...");
+
+    const vision = await FilesetResolver.forVisionTasks(
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm",
+    );
+
+    console.log("Loading Hand Landmarker...");
+
+    this.landmarker = await HandLandmarker.createFromOptions(
+      vision,
+
+      {
+        baseOptions: {
+            modelAssetPath:
+                "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task"
+        },
+
+        runningMode: "VIDEO",
+
+        numHands: 2,
+      },
+    );
+
+    console.log("✅ HandTracker Ready");
+
+    this.running = true;
+
+    requestAnimationFrame(this.detect.bind(this));
+  }
+
+  detect() {
+    if (!this.running) return;
+
+    if (this.video.readyState < 2) {
+      requestAnimationFrame(this.detect.bind(this));
+      return;
     }
 
-    async initialize(video) {
-
-        this.video = video;
-
-        this.hands = new Hands({
-
-            locateFile: (file) => {
-                return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
-            }
-
-        });
-
-        this.hands.setOptions({
-
-            maxNumHands: 2,
-
-            modelComplexity: 1,
-
-            minDetectionConfidence: 0.7,
-
-            minTrackingConfidence: 0.7
-
-        });
-
-        this.hands.onResults((results) => {
-
-            LandmarkDrawer.draw(results);
-
-            document.getElementById("hands").textContent =
-                results.multiHandLandmarks
-                    ? results.multiHandLandmarks.length
-                    : 0;
-
-            this.updateFPS();
-
-            EventBus.emit("hands-result", results);
-
-        });
-
-        this.camera = new Camera(video, {
-
-            onFrame: async () => {
-
-                await this.hands.send({
-
-                    image: video
-
-                });
-
-            },
-
-            width: 1280,
-
-            height: 720
-
-        });
-
-        this.camera.start();
-
-        console.log("✅ HandTracker Started");
-
+    if (this.video.currentTime === this.lastVideoTime) {
+      requestAnimationFrame(this.detect.bind(this));
+      return;
     }
 
-    updateFPS() {
+    this.lastVideoTime = this.video.currentTime;
 
-        this.frames++;
+    const result = this.landmarker.detectForVideo(
+      this.video,
 
-        const now = performance.now();
+      performance.now(),
+    );
 
-        if (now - this.lastTime >= 1000) {
+    console.log(result);
 
-            document.getElementById("fps").textContent = this.frames;
+    this.frames++;
 
-            this.frames = 0;
+    const now = performance.now();
 
-            this.lastTime = now;
+    if (now - this.lastFPSUpdate >= 1000) {
+      document.getElementById("fps").textContent = this.frames;
 
-        }
-
+      this.frames = 0;
+      this.lastFPSUpdate = now;
     }
 
+    document.getElementById("hands").textContent = result.landmarks
+      ? result.landmarks.length
+      : 0;
+
+    LandmarkDrawer.draw(
+        result,
+        this.video,
+    );
+      EventBus.emit("hands-result", result);
+
+    requestAnimationFrame(this.detect.bind(this));
+  }
+
+  stop() {
+    this.running = false;
+  }
 }
 
 export default new HandTracker();
