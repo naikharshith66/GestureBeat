@@ -6,168 +6,379 @@ import AudioEngine from "../audio/AudioEngine.js";
 
 import Waveform from "../audio/Waveform.js";
 
+
 class App {
 
     constructor() {
 
-        this.dashboard = new Dashboard();
+        this.dashboard =
+            new Dashboard();
 
     }
 
+
     async initialize() {
 
-        document.body.innerHTML = this.dashboard.render();
+        document.body.innerHTML =
+            this.dashboard.render();
 
-        console.log("🚀 GestureBeat Started");
+
+        console.log(
+            "🚀 GestureBeat Started"
+        );
+
 
         this.initializeEvents();
+
 
         await this.startCamera();
 
     }
-    
+
+
+    // =====================================
+    // EVENTS
+    // =====================================
+
     initializeEvents() {
-   
-        document
-            .getElementById("importSong")
-            .addEventListener("click", () => {
 
-                this.importSong();
+        const importButton =
+            document.getElementById(
+                "importSong"
+            );
 
-           });
 
-        document
-            .getElementById("playSong")
-            .addEventListener("click", () => {
+        const playButton =
+            document.getElementById(
+                "playSong"
+            );
 
-                if (AudioEngine.song) {
 
-                    AudioEngine.play();
+        const pauseButton =
+            document.getElementById(
+                "pauseSong"
+            );
+
+
+        /*
+         * IMPORT SONG
+         */
+
+        if (importButton) {
+
+            importButton.addEventListener(
+                "click",
+                () => {
+
+                    this.importSong();
 
                 }
+            );
 
-            });
+        }
 
-        document
-            .getElementById("pauseSong")
-            .addEventListener("click", () => {
 
-                if (AudioEngine.song) {
+        /*
+         * PLAY
+         */
 
-                AudioEngine.pause();
+        if (playButton) {
 
-             }
+            playButton.addEventListener(
+                "click",
+                () => {
 
-        });
+                    if (AudioEngine.song) {
 
-       
-        document
-            .getElementById("record")
-            .addEventListener("click", () => {
+                        AudioEngine.play();
 
-                console.log("🎥 Record Coming Soon");
+                    }
 
-            });
+                }
+            );
 
-       
-        document
-            .getElementById("export")
-            .addEventListener("click", () => {
+        }
 
-                console.log("📤 Export Coming Soon");
 
-            });
+        /*
+         * PAUSE
+         */
+
+        if (pauseButton) {
+
+            pauseButton.addEventListener(
+                "click",
+                () => {
+
+                    if (AudioEngine.song) {
+
+                        AudioEngine.pause();
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        /*
+         * Record / Export intentionally removed.
+         */
 
     }
+
+
+    // =====================================
+    // CAMERA
+    // =====================================
 
     async startCamera() {
 
-        console.log("🚀 startCamera called");
-        
-        const video = document.getElementById("video");
+        console.log(
+            "🚀 Starting camera..."
+        );
 
-        try {
 
-            const stream = await navigator.mediaDevices.getUserMedia({
+        const video =
+            document.getElementById(
+                "video"
+            );
 
-                video: {
 
-                    width: 1280,
+        if (!video) {
 
-                    height: 720,
+            console.error(
+                "❌ Video element not found."
+            );
 
-                    facingMode: "user"
-
-                },
-
-                audio: false
-
-            });
-
-            video.srcObject = stream;
-
-            await video.play();
-
-            await HandTracker.initialize(video);
+            return;
 
         }
 
-        catch (err) {
 
-            console.error(err);
+        /*
+         * Check browser support
+         */
 
-            alert("Unable to access camera.");
+        if (
+            !navigator.mediaDevices ||
+            !navigator.mediaDevices.getUserMedia
+        ) {
+
+            console.error(
+                "❌ Camera API is not supported."
+            );
+
+            alert(
+                "Camera access is not supported by this browser."
+            );
+
+            return;
+
+        }
+
+
+        try {
+
+            const stream =
+                await navigator.mediaDevices.getUserMedia({
+
+                    video: {
+
+                        width: {
+                            ideal: 1280
+                        },
+
+                        height: {
+                            ideal: 720
+                        },
+
+                        facingMode: "user"
+
+                    },
+
+                    audio: false
+
+                });
+
+
+            console.log(
+                "📷 Camera stream received"
+            );
+
+
+            video.srcObject =
+                stream;
+
+
+            video.muted =
+                true;
+
+            video.autoplay =
+                true;
+
+            video.playsInline =
+                true;
+
+
+            await video.play();
+
+
+            console.log(
+                "▶ Camera video playing"
+            );
+
+
+            /*
+             * Start hand tracking
+             */
+
+            await HandTracker.initialize(
+                video
+            );
+
+
+            console.log(
+                "🖐 Hand tracking started"
+            );
+
+        }
+
+
+        catch (error) {
+
+            console.error(
+                "❌ Camera initialization failed:",
+                error
+            );
+
+
+            alert(
+                "Unable to access camera. Please allow camera access and refresh the page."
+            );
 
         }
 
     }
 
+
+    // =====================================
+    // IMPORT SONG
+    // =====================================
+
     importSong() {
 
-        const input = document.createElement("input");
+        const input =
+            document.createElement(
+                "input"
+            );
 
-        input.type = "file";
 
-        input.accept = "audio/*";
+        input.type =
+            "file";
 
-        input.onchange = () => {
 
-            const file = input.files[0];
+        input.accept =
+            "audio/*";
 
-            if (!file) return;
 
-            const song = LibraryManager.addSong(file);
+        input.onchange =
+            () => {
 
-            AudioEngine.load(song);
+                const file =
+                    input.files[0];
 
-            Waveform.load(file);
 
-            document.getElementById("songName").textContent =
-                "🎵 " + song.name;
+                if (!file) return;
 
-            AudioEngine.audio.onloadedmetadata = () => {
 
-                const duration = AudioEngine.audio.duration;
+                const song =
+                    LibraryManager.addSong(
+                        file
+                    );
 
-                const minutes = Math.floor(duration / 60);
 
-                const seconds = Math.floor(duration % 60)
-                    .toString()
-                    .padStart(2, "0");
+                AudioEngine.load(
+                    song
+                );
 
-                document.getElementById("duration").textContent =
-                    `⏱ ${minutes}:${seconds}`;
+
+                Waveform.load(
+                    file
+                );
+
+
+                const songName =
+                    document.getElementById(
+                        "songName"
+                    );
+
+
+                if (songName) {
+
+                    songName.textContent =
+                        "🎵 " +
+                        song.name;
+
+                }
+
+
+                AudioEngine.audio
+                    .onloadedmetadata =
+                    () => {
+
+                        const duration =
+                            AudioEngine.audio.duration;
+
+
+                        const minutes =
+                            Math.floor(
+                                duration / 60
+                            );
+
+
+                        const seconds =
+                            Math.floor(
+                                duration % 60
+                            )
+                            .toString()
+                            .padStart(
+                                2,
+                                "0"
+                            );
+
+
+                        const durationElement =
+                            document.getElementById(
+                                "duration"
+                            );
+
+
+                        if (
+                            durationElement
+                        ) {
+
+                            durationElement.textContent =
+                                `⏱ ${minutes}:${seconds}`;
+
+                        }
+
+                    };
+
+
+                console.log(
+                    "🎵 Song Loaded"
+                );
 
             };
 
-            console.log("🎵 Song Loaded");
-
-        };
 
         input.click();
 
     }
 
 }
+
 
 export default new App();
