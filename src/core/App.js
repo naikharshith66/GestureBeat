@@ -1,13 +1,20 @@
 import Dashboard from "../ui/Dashboard.js";
 import HandTracker from "../hand/HandTracker.js";
 
+import LibraryManager from "../audio/LibraryManager.js";
+import AudioEngine from "../audio/AudioEngine.js";
+
+import Waveform from "../audio/Waveform.js";
+
 class App {
 
     constructor() {
+
         this.dashboard = new Dashboard();
+
     }
 
-    initialize() {
+    async initialize() {
 
         document.body.innerHTML = this.dashboard.render();
 
@@ -15,15 +22,59 @@ class App {
 
         this.initializeEvents();
 
+        await this.startCamera();
+
     }
-
+    
     initializeEvents() {
-
+   
         document
-            .getElementById("startCamera")
+            .getElementById("importSong")
             .addEventListener("click", () => {
 
-                this.startCamera();
+                this.importSong();
+
+           });
+
+        document
+            .getElementById("playSong")
+            .addEventListener("click", () => {
+
+                if (AudioEngine.song) {
+
+                    AudioEngine.play();
+
+                }
+
+            });
+
+        document
+            .getElementById("pauseSong")
+            .addEventListener("click", () => {
+
+                if (AudioEngine.song) {
+
+                AudioEngine.pause();
+
+             }
+
+        });
+
+       
+        document
+            .getElementById("record")
+            .addEventListener("click", () => {
+
+                console.log("🎥 Record Coming Soon");
+
+            });
+
+       
+        document
+            .getElementById("export")
+            .addEventListener("click", () => {
+
+                console.log("📤 Export Coming Soon");
 
             });
 
@@ -31,6 +82,8 @@ class App {
 
     async startCamera() {
 
+        console.log("🚀 startCamera called");
+        
         const video = document.getElementById("video");
 
         try {
@@ -58,6 +111,7 @@ class App {
             await HandTracker.initialize(video);
 
         }
+
         catch (err) {
 
             console.error(err);
@@ -65,6 +119,52 @@ class App {
             alert("Unable to access camera.");
 
         }
+
+    }
+
+    importSong() {
+
+        const input = document.createElement("input");
+
+        input.type = "file";
+
+        input.accept = "audio/*";
+
+        input.onchange = () => {
+
+            const file = input.files[0];
+
+            if (!file) return;
+
+            const song = LibraryManager.addSong(file);
+
+            AudioEngine.load(song);
+
+            Waveform.load(file);
+
+            document.getElementById("songName").textContent =
+                "🎵 " + song.name;
+
+            AudioEngine.audio.onloadedmetadata = () => {
+
+                const duration = AudioEngine.audio.duration;
+
+                const minutes = Math.floor(duration / 60);
+
+                const seconds = Math.floor(duration % 60)
+                    .toString()
+                    .padStart(2, "0");
+
+                document.getElementById("duration").textContent =
+                    `⏱ ${minutes}:${seconds}`;
+
+            };
+
+            console.log("🎵 Song Loaded");
+
+        };
+
+        input.click();
 
     }
 

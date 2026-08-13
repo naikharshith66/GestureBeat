@@ -23,3 +23,5 @@ assets/song.mp3
 assets/*.mp3
 assets/*.wav
 assets/*.m4a
+# dependencies
+node_modules/

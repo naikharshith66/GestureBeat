@@ -1,54 +1,79 @@
-import GestureUtils from "./GestureUtils.js";
+import GestureRecognizer from "./GestureRecognizer.js";
+import GestureTypes from "./GestureTypes.js";
 
 class GestureClassifier {
 
     classify(hand) {
 
-        if (this.isOpenPalm(hand))
-            return "Open Palm";
+        const g =
+            GestureRecognizer.recognize(hand);
 
-        if (this.isFist(hand))
-            return "Fist";
 
-        if (this.isPeace(hand))
-            return "Peace";
+        if (
+            GestureRecognizer.isOKGesture(hand) &&
+            g.middleOpen &&
+            g.ringOpen &&
+            g.pinkyOpen
+        ) {
 
-        return "Unknown";
-    }
+            return GestureTypes.OK;
 
-    isOpenPalm(hand) {
+        }
 
-        return (
-            GestureUtils.isFingerOpen(hand,8,6) &&
-            GestureUtils.isFingerOpen(hand,12,10) &&
-            GestureUtils.isFingerOpen(hand,16,14) &&
-            GestureUtils.isFingerOpen(hand,20,18)
-        );
 
-    }
+        
+        if (
+            g.thumbOpen &&
+            g.indexOpen &&
+            g.middleOpen &&
+            g.ringOpen &&
+            g.pinkyOpen
+        ) {
 
-    isFist(hand) {
+            return GestureTypes.OPEN_PALM;
 
-        return (
-            GestureUtils.isFingerClosed(hand,8,6) &&
-            GestureUtils.isFingerClosed(hand,12,10) &&
-            GestureUtils.isFingerClosed(hand,16,14) &&
-            GestureUtils.isFingerClosed(hand,20,18)
-        );
+        }
 
-    }
 
-    isPeace(hand) {
+        if (
+            g.thumbOpen &&
+            !g.indexOpen &&
+            !g.middleOpen &&
+            !g.ringOpen &&
+            !g.pinkyOpen
+        ) {
 
-        return (
+            return GestureTypes.THUMBS_UP;
 
-            GestureUtils.isFingerOpen(hand,8,6) &&
-            GestureUtils.isFingerOpen(hand,12,10) &&
+        }
 
-            GestureUtils.isFingerClosed(hand,16,14) &&
-            GestureUtils.isFingerClosed(hand,20,18)
 
-        );
+        if (
+            g.indexOpen &&
+            g.middleOpen &&
+            !g.ringOpen &&
+            !g.pinkyOpen
+        ) {
+
+            return GestureTypes.PEACE;
+
+        }
+
+
+        if (
+            !g.thumbOpen &&
+            !g.indexOpen &&
+            !g.middleOpen &&
+            !g.ringOpen &&
+            !g.pinkyOpen
+        ) {
+
+            return GestureTypes.FIST;
+
+        }
+
+
+        return GestureTypes.UNKNOWN;
 
     }
 

@@ -6,6 +6,7 @@ import {
 import EventBus from "../core/EventBus.js";
 import LandmarkDrawer from "./LandmarkDrawer.js";
 import GestureEngine from "../gesture/GestureEngine.js";
+import GestureActions from "../gesture/GestureActions.js";
 
 class HandTracker {
 
@@ -30,46 +31,44 @@ class HandTracker {
 
         console.log("🚀 Loading MediaPipe...");
 
-        const vision = await FilesetResolver.forVisionTasks(
-            "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm"
-        );
+        const vision =
+            await FilesetResolver.forVisionTasks(
+                "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm"
+            );
 
         console.log("📦 Loading Hand Landmarker...");
 
-        this.landmarker = await HandLandmarker.createFromOptions(
+        this.landmarker =
+            await HandLandmarker.createFromOptions(
+                vision,
+                {
+                    baseOptions: {
+                        modelAssetPath:
+                            "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task"
+                    },
 
-            vision,
+                    runningMode: "VIDEO",
 
-            {
+                    numHands: 2,
 
-                baseOptions: {
+                    minHandDetectionConfidence: 0.7,
 
-                    modelAssetPath:
-                        "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task"
+                    minTrackingConfidence: 0.7,
 
-                },
-
-                runningMode: "VIDEO",
-
-                numHands: 2,
-
-                minHandDetectionConfidence: 0.7,
-
-                minTrackingConfidence: 0.7,
-
-                minHandPresenceConfidence: 0.7
-
-            }
-
-        );
+                    minHandPresenceConfidence: 0.7
+                }
+            );
 
         console.log("✅ HandTracker Ready");
 
         this.running = true;
 
-        requestAnimationFrame(() => this.detect());
+        requestAnimationFrame(
+            () => this.detect()
+        );
 
     }
+
 
     detect() {
 
@@ -77,69 +76,120 @@ class HandTracker {
 
         if (this.video.readyState < 2) {
 
-            requestAnimationFrame(() => this.detect());
+            requestAnimationFrame(
+                () => this.detect()
+            );
+
             return;
 
         }
 
-        if (this.video.currentTime === this.lastVideoTime) {
 
-            requestAnimationFrame(() => this.detect());
+        if (
+            this.video.currentTime ===
+            this.lastVideoTime
+        ) {
+
+            requestAnimationFrame(
+                () => this.detect()
+            );
+
             return;
 
         }
 
-        this.lastVideoTime = this.video.currentTime;
 
-        const result = this.landmarker.detectForVideo(
+        this.lastVideoTime =
+            this.video.currentTime;
 
-            this.video,
 
-            performance.now()
+        const result =
+            this.landmarker.detectForVideo(
+                this.video,
+                performance.now()
+            );
 
+
+        LandmarkDrawer.draw(
+            result,
+            this.video
         );
 
-        // Draw skeleton
-        LandmarkDrawer.draw(result, this.video);
+        const gesture =
+            GestureEngine.detect(result);
 
-        // Detect gesture
-        const gesture = GestureEngine.detect(result);
+        const gestureElement =
+            document.getElementById("gesture");
 
-        document.getElementById("gesture").textContent = gesture;
+        if (gestureElement) {
 
-        // Update hand count
-        document.getElementById("hands").textContent =
-            result.landmarks
-                ? result.landmarks.length
-                : 0;
+            gestureElement.textContent =
+                gesture;
 
-        // FPS Counter
+        }
+
+        GestureActions.handle(
+            gesture
+        );
+
+        const handsElement =
+            document.getElementById("hands");
+
+        if (handsElement) {
+
+            handsElement.textContent =
+                result.landmarks
+                    ? result.landmarks.length
+                    : 0;
+
+        }
+
+
         this.frames++;
 
-        const now = performance.now();
+        const now =
+            performance.now();
 
-        if (now - this.lastFPSUpdate >= 1000) {
 
-            document.getElementById("fps").textContent = this.frames;
+        if (
+            now -
+            this.lastFPSUpdate >=
+            1000
+        ) {
+
+            const fpsElement =
+                document.getElementById("fps");
+
+            if (fpsElement) {
+
+                fpsElement.textContent =
+                    this.frames;
+
+            }
 
             this.frames = 0;
 
-            this.lastFPSUpdate = now;
+            this.lastFPSUpdate =
+                now;
 
         }
 
-        // Broadcast results
-        EventBus.emit("hands-result", {
 
-            result,
+        EventBus.emit(
+            "hands-result",
+            {
+                result,
+                gesture
+            }
+        );
 
-            gesture
 
-        });
-
-        requestAnimationFrame(() => this.detect());
+        requestAnimationFrame(
+            () => this.detect()
+        );
 
     }
+
 
     stop() {
 
@@ -148,5 +198,6 @@ class HandTracker {
     }
 
 }
+
 
 export default new HandTracker();

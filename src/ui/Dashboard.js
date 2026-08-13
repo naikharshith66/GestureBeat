@@ -1,85 +1,32 @@
+import Header from "./Header.js";
+import Workspace from "./Workspace.js";
+import SongInfo from "./SongInfo.js";
+import Controls from "./Controls.js";
+
 export default class Dashboard {
+
+    constructor() {
+
+        this.header = new Header();
+        this.workspace = new Workspace();
+        this.songInfo = new SongInfo();
+        this.controls = new Controls();
+
+    }
 
     render() {
 
         return `
-        
+
         <div class="dashboard">
 
-            <header>
+            ${this.header.render()}
 
-                <div class="logo">
+            ${this.workspace.render()}
 
-                    🎵 GestureBeat
+            ${this.songInfo.render()}
 
-                </div>
-
-                <div class="stats">
-
-                    <div class="card">
-
-                        <h3>FPS</h3>
-
-                        <span id="fps">0</span>
-
-                    </div>
-
-                    <div class="card">
-
-                        <h3>Hands</h3>
-
-                        <span id="hands">0</span>
-
-                    </div>
-
-                    <div class="card">
-
-                        <h3>Gesture</h3>
-
-                        <span id="gesture">None</span>
-
-                    </div>
-
-                </div>
-
-            </header>
-
-            <main>
-
-                <div class="camera-panel">
-
-                    <video
-                        id="video"
-                        autoplay
-                        playsinline
-                        muted
-                    ></video>
-
-                    <canvas id="canvas"></canvas>
-
-                </div>
-
-                <div class="sidebar">
-
-                    <button id="startCamera">
-                        📷 Start Camera
-                    </button>
-
-                    <button id="loadSong">
-                        🎵 Load Song
-                    </button>
-
-                    <button id="record">
-                        ⏺ Record
-                    </button>
-
-                    <button id="export">
-                        📤 Export
-                    </button>
-
-                </div>
-
-            </main>
+            ${this.controls.render()}
 
         </div>
 
